@@ -1,27 +1,36 @@
-import  { useState, useEffect, useRef } from 'react';
+// src/App.tsx
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Box, Button, Heading, Select,
-  Textarea, VStack, HStack, Text, Spinner
+  Box,
+  Button,
+  Heading,
+  Select,
+  Textarea,
+  VStack,
+  HStack,
+  Text,
+  Spinner
 } from '@chakra-ui/react';
 import { translateText } from './api';
 
 export default function App() {
-  const [transcript, setTranscript] = useState('');
-  const [translated, setTranslated] = useState('');
-  const [target, setTarget] = useState('English');
-  const [loading, setLoading] = useState(false);
+  const [transcript, setTranscript] = useState<string>('');
+  const [translated, setTranslated] = useState<string>('');
+  const [target, setTarget] = useState<string>('English');
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Use any for SpeechRecognition instance
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recog = new SpeechRecognition();
+    const w = window as any;
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (SR) {
+      const recog = new SR();
       recog.continuous = false;
       recog.lang = 'en-US';
-      recog.onresult = e => {
-        setTranscript(e.results[0][0].transcript);
+      recog.onresult = (event: any) => {
+        setTranscript(event.results[0][0].transcript);
       };
       recognitionRef.current = recog;
     }
@@ -36,9 +45,10 @@ export default function App() {
     setLoading(true);
     setTranslated('');
     try {
-      const res = await translateText(transcript, target);
-      setTranslated(res);
-    } catch {
+      const translatedText = await translateText(transcript, target);
+      setTranslated(translatedText);
+    } catch (error) {
+      console.error('Translation error:', error);
       setTranslated('Error translating text.');
     }
     setLoading(false);
@@ -46,11 +56,19 @@ export default function App() {
 
   return (
     <VStack p={6} spacing={4} maxW="600px" mx="auto">
-      <Heading size="lg">Speech‑to‑Text & Translation</Heading>
+      <Heading size="lg">Speech-to-Text & Translation</Heading>
 
       <HStack>
-        <Button colorScheme="blue" onClick={startListening}>Start Speaking</Button>
-        <Select value={target} onChange={e => setTarget(e.target.value)}>
+        <Button colorScheme="blue" onClick={startListening}>
+          Start Speaking
+        </Button>
+        <Select
+          value={target}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            setTarget(e.target.value)
+          }
+          maxW="200px"
+        >
           <option>English</option>
           <option>Chinese</option>
           <option>Malay</option>
@@ -71,9 +89,11 @@ export default function App() {
         onClick={handleTranslate}
         isDisabled={!transcript}
         isLoading={loading}
-      >Translate</Button>
+      >
+        Translate
+      </Button>
 
-      {loading && <Spinner />}
+      {loading && <Spinner size="lg" />}
 
       {translated && (
         <Box p={4} borderWidth={1} borderRadius="md" w="100%">
